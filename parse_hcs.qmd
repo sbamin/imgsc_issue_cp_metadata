@@ -1,0 +1,81 @@
+---
+title: "parse_hcs"
+author: "Samir Amin"
+format: gfm
+editor_options: 
+  chunk_output_type: console
+---
+
+Simulate NamesAndTypes module of CellProfiler in R
+>Using pivot_wider function from tidyverse R package.
+
+```{r}
+#| warning: false
+
+library(tidyverse)
+library(here)
+library(glue)
+
+workdir <- here()
+```
+
+
+Scan for images
+
+```{r}
+imgs <- list.files(workdir,
+                   pattern = ".*f01.*.tiff",
+                   full.names = TRUE,
+                   recursive = TRUE
+                   )
+
+glue("Found { length(imgs) } images")
+```
+
+Create a metadata manifest
+
+```{r}
+metadata <- imgs |> 
+  as_tibble() |> 
+  separate_wider_regex(
+    value,
+    c(
+      ".*data\\/",
+      plateid = "SCBHCS[0-9]{6}",
+      "__",
+      timestamp = "[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}_[0-9]{1,2}_[0-9]{1,2}",
+      "-Measurement[\\s]{1}",
+      measurement = "[0-9]{1}",
+      "\\/Images\\/",
+      "r",
+      wellrow = "[0-9]{2}",
+      "c",
+      wellcol = "[0-9]{2}",
+      "f",
+      field = "[0-9]{2}",
+      "p",
+      plane = "[0-9]{2}",
+      "-",
+      channel = "ch[0-9]{1}",
+      "sk1fk1fl1.tiff"
+    ),
+    cols_remove = FALSE
+  ) |> 
+  mutate(FileLocation = sprintf("file:%s", value)) |> 
+  dplyr::rename(Path = "value")
+
+write_csv(metadata, "metadata.csv", append = FALSE)
+```
+
+Create a grouped metadata with each row showing channel-specific image paths
+from a single z-stack (or plane), grouped by field, well, measurement or timestamp,
+and plateid.
+
+```{r}
+grouped_metadata <- metadata |> 
+  pivot_wider(names_from = "channel",
+              names_glue = "{channel}_{.value}",
+              values_from = c(Path, FileLocation))
+
+write_csv(grouped_metadata, "grouped_metadata.csv", append = FALSE)
+```
