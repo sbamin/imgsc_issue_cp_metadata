@@ -1,5 +1,7 @@
 # For debug
 
+20231118: Issue seems to have fixed with a commit: [70cfb4df](https://github.com/sbamin/imgsc_issue_cp_metadata/commit/70cfb4df7944a5648dd40f8a536cf69273751cea)
+
 [image.sc forum issue](https://forum.image.sc/t/failing-to-parse-hcs-image-set-using-namesandtypes-module/88622)
 
 NamesAndTypes module failing for HCS project
